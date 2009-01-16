@@ -49,29 +49,27 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         final ContactsProvider serverDiffs = newTemporaryProvider();
 
         ContactEntry entry1 = newPerson("title1", "note1", "1", "a");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry1, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 11L, entry1, serverDiffs);
 
         ContactEntry entry2 = newPerson("title2", "note2", "2", "b");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry2, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, entry2, serverDiffs);
 
         ContactEntry entry3 = newPerson("title3", "note3", "3", "c");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry3, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 13L, entry3, serverDiffs);
 
         ContactEntry entry4 = newPerson("title4", "note4", "4", "d");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, true, entry4, serverDiffs);
+        entry4.setDeleted(true);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 14L, entry4, serverDiffs);
 
         ContactEntry entry5 = newDeletedPerson("5", "e");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry5, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 15L, entry5, serverDiffs);
 
         checkTableIsEmpty(getProvider(), Contacts.ContactMethods.CONTENT_URI);
         checkTableIsEmpty(getProvider(), Contacts.Organizations.CONTENT_URI);
         checkTableIsEmpty(getProvider(), Contacts.Phones.CONTENT_URI);
 
-        checkEntries(serverDiffs, false, entry1, entry2, entry3);
-        checkEntries(serverDiffs, true, entry4, entry5);
-
-        checkEntries(serverDiffs, false, entry1, entry2, entry3);
-        checkEntries(serverDiffs, true, entry4, entry5);
+        checkEntries(serverDiffs, false, entry1, 11L, entry2, null, entry3, 13L);
+        checkEntries(serverDiffs, true, entry4, 14L, entry5, 15L);
 
         // Convert the provider back to an entry and check that they match
         Cursor cursor;
@@ -99,21 +97,22 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         final ContactsProvider serverDiffs = newTemporaryProvider();
 
         GroupEntry g1 = newGroup("g1", "n1", "i1", "v1");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, g1, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 21L, g1, serverDiffs);
 
         GroupEntry g2 = newGroup("g2", "n2", "i2", "v2");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, g2, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, g2, serverDiffs);
 
         GroupEntry g3 = newGroup("g3", "n3", "i3", "v3");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, true, g3, serverDiffs);
+        g3.setDeleted(true);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 23L, g3, serverDiffs);
 
         GroupEntry g4 = newDeletedGroup("i4", "v4");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, g4, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 24L, g4, serverDiffs);
 
         // confirm that the entries we expect are in the Groups and DeletedGroups
         // tables
-        checkEntries(serverDiffs, false, g1, g2);
-        checkEntries(serverDiffs, true, g3, g4);
+        checkEntries(serverDiffs, false, g1, 21L, g2, null);
+        checkEntries(serverDiffs, true, g3, 23L, g4, 24L);
 
         // Convert the provider back to an entry and check that they match
         Cursor cursor;
@@ -148,13 +147,13 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         ContactEntry p = newPerson("p1", "pn1", "pi1", "pv1");
 
         addGroupMembership(p, ACCOUNT, "gsi1");
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, p, serverDiffs);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, 31L, p, serverDiffs);
 
         // The provider should now have:
         // - a row in the people table
         // - a row in the groupmembership table
 
-        checkEntries(serverDiffs, false, p);
+        checkEntries(serverDiffs, false, p, 31L);
 
         checkTableIsEmpty(serverDiffs, ContactsProvider.sPeopleTable);
         checkTableIsEmpty(serverDiffs, ContactsProvider.sGroupmembershipTable);
@@ -202,7 +201,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         addIm(entry, "c44444", ImAddress.PROTOCOL_ICQ, null, false, ImAddress.TYPE_NONE, "l2");
 
         final ContactsProvider provider = newTemporaryProvider();
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry, provider);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, entry, provider);
 
         checkTableIsEmpty(getProvider(), Contacts.Phones.CONTENT_URI);
         checkTableIsEmpty(getProvider(), Contacts.Organizations.CONTENT_URI);
@@ -262,7 +261,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         addPhoneNumber(entry, "77777", false, PhoneNumber.TYPE_OTHER, null);
         addPhoneNumber(entry, "88888", false, PhoneNumber.TYPE_NONE, "lucky");
         final ContactsProvider provider = newTemporaryProvider();
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry, provider);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, entry, provider);
 
         checkTableIsEmpty(getProvider(), Contacts.ContactMethods.CONTENT_URI);
         checkTableIsEmpty(getProvider(), Contacts.Organizations.CONTENT_URI);
@@ -296,7 +295,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         addOrganization(entry, "22222", "title2", false, Organization.TYPE_OTHER, null);
         addOrganization(entry, "33333", "title3", false, Organization.TYPE_NONE, "label1");
         final ContactsProvider provider = newTemporaryProvider();
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry, provider);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, entry, provider);
 
         checkTableIsEmpty(getProvider(), Contacts.ContactMethods.CONTENT_URI);
         checkTableIsEmpty(getProvider(), Contacts.Phones.CONTENT_URI);
@@ -326,7 +325,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         ContactEntry entry = newPerson(entryTitle, "note1", "2", "3");
         addExtendedProperty(entry, "android", null, "{\"other\":\"that\",\"more\":\"hello.mp3\"}");
         final ContactsProvider provider = newTemporaryProvider();
-        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, -1, false, entry, provider);
+        ContactsSyncAdapter.updateProviderImpl(ACCOUNT, null, entry, provider);
 
         long personId = getSinglePersonId(provider, entryTitle);
 
@@ -381,8 +380,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         // save a downloaded photo for that person using the ContactsSyncAdapter
         byte[] remotePhotoData = "remote photo data".getBytes();
         InputStream photoStream = new ByteArrayInputStream(remotePhotoData);
-        ContactsSyncAdapter syncAdapter = (ContactsSyncAdapter)getProvider().getSyncAdapter();
-        syncAdapter.savePhoto(ContentUris.parseId(p), photoStream, "pv1");
+        mSyncAdapter.savePhoto(ContentUris.parseId(p), photoStream, "pv1");
 
         // check that the photos rows look correct
         cursor = getProvider().getDatabase().query(ContactsProvider.sPhotosTable, 
@@ -448,7 +446,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         return entry;
     }
 
-    private static void checkNextGroup(Cursor cursor, GroupEntry entry) {
+    private static void checkNextGroup(Cursor cursor, GroupEntry entry, Long syncLocalId) {
         assertTrue(cursor.moveToNext());
         assertEquals(dumpRow(cursor), entry.getId(),
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
@@ -458,6 +456,10 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         assertEquals(dumpRow(cursor), entry.getTitle(), getString(cursor, Groups.NAME));
         assertEquals(dumpRow(cursor), entry.getSystemGroup(), getString(cursor, Groups.SYSTEM_ID));
         assertEquals(dumpRow(cursor), entry.getContent(), getString(cursor, Groups.NOTES));
+        if (syncLocalId != null) {
+            assertEquals(dumpRow(cursor),
+                    syncLocalId, getString(cursor, SyncConstValue._SYNC_LOCAL_ID));
+        }
     }
 
     private static ContactEntry newPerson(String title, String notes, String id, String version) {
@@ -523,7 +525,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
     }
 
     private static void checkNextPerson(ContactsProvider provider, Cursor cursor,
-            ContactEntry entry) {
+            ContactEntry entry, Long syncLocalId) {
         assertTrue(cursor.moveToNext());
         assertEquals(dumpRow(cursor), entry.getId(),
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
@@ -532,6 +534,10 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         assertEquals(dumpRow(cursor), ACCOUNT, getString(cursor, SyncConstValue._SYNC_ACCOUNT));
         assertEquals(dumpRow(cursor), entry.getTitle(), getString(cursor, People.NAME));
         assertEquals(dumpRow(cursor), entry.getContent(), getString(cursor, People.NOTES));
+        if (syncLocalId != null) {
+            assertEquals(dumpRow(cursor),
+                    syncLocalId, getString(cursor, SyncConstValue._SYNC_LOCAL_ID));
+        }
 
         Cursor groupCursor = provider.getDatabase().query(ContactsProvider.sGroupmembershipTable,
                 null, Contacts.GroupMembership.PERSON_ID + "=?",
@@ -550,13 +556,17 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         }
     }
 
-    private static void checkNextDeleted(Cursor cursor, Entry entry) {
+    private static void checkNextDeleted(Cursor cursor, Entry entry, Long syncLocalId) {
         assertTrue(cursor.moveToNext());
         assertEquals(dumpRow(cursor), entry.getId(),
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
         assertEquals(dumpRow(cursor), entry.getEditUri(),
                 entry.getId() + "/" + getString(cursor, SyncConstValue._SYNC_VERSION));
         assertEquals(dumpRow(cursor), ACCOUNT, getString(cursor, SyncConstValue._SYNC_ACCOUNT));
+        if (syncLocalId != null) {
+            assertEquals(dumpRow(cursor),
+                    syncLocalId.toString(), getString(cursor, SyncConstValue._SYNC_LOCAL_ID));
+        }
     }
 
 
@@ -647,6 +657,10 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
 
     private static String getString(Cursor cursor, String column) {
         return cursor.getString(cursor.getColumnIndexOrThrow(column));
+    }
+
+    private static boolean isNull(Cursor cursor, String column) {
+        return cursor.isNull(cursor.getColumnIndexOrThrow(column));
     }
 
     private static void checkNextContactMethod(Cursor cursor, long personId, String data,
@@ -791,10 +805,11 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         getProvider().onSyncStart(mMockSyncContext, ACCOUNT);
     }
 
-    void checkEntries(ContactsProvider provider, boolean deleted, Entry ... entries) {
+    void checkEntries(ContactsProvider provider, boolean deleted,
+            Object ... entriesAndLocalSyncIds) {
         String table;
         String sortOrder = deleted ? "_sync_id" : "name";
-        final Entry firstEntry = entries.clone()[0];
+        final Entry firstEntry = (Entry)entriesAndLocalSyncIds[0];
         if (firstEntry instanceof GroupEntry) {
             if (deleted) {
                 table = ContactsProvider.sDeletedGroupsTable;
@@ -811,14 +826,16 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
         Cursor cursor;
          cursor = provider.getDatabase().query(table, null, null, null, null, null, sortOrder);
          try {
-             for (Entry entry : entries) {
+             for (int i = 0; i < entriesAndLocalSyncIds.length; i += 2) {
+                 Entry entry = (Entry)entriesAndLocalSyncIds[i];
+                 Long syncLocalId = (Long)entriesAndLocalSyncIds[i+1];
                  if (deleted) {
-                     checkNextDeleted(cursor, entry);
+                     checkNextDeleted(cursor, entry, syncLocalId);
                  } else {
                      if (firstEntry instanceof GroupEntry) {
-                         checkNextGroup(cursor, (GroupEntry)entry);
+                         checkNextGroup(cursor, (GroupEntry)entry, null);
                      } else {
-                         checkNextPerson(provider, cursor, (ContactEntry)entry);
+                         checkNextPerson(provider, cursor, (ContactEntry)entry, null);
                      }
                  }
              }

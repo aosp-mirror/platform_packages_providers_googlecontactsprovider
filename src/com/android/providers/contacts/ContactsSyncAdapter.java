@@ -22,11 +22,9 @@ import com.google.android.gdata.client.AndroidXmlParserFactory;
 import com.google.android.googlelogin.GoogleLoginServiceBlockingHelper;
 import com.google.android.googlelogin.GoogleLoginServiceNotFoundException;
 import com.google.android.providers.AbstractGDataSyncAdapter;
-import com.google.wireless.gdata.ConflictDetectedException;
-import com.google.wireless.gdata.client.AuthenticationException;
 import com.google.wireless.gdata.client.GDataServiceClient;
 import com.google.wireless.gdata.client.QueryParams;
-import com.google.wireless.gdata.client.ResourceNotFoundException;
+import com.google.wireless.gdata.client.HttpException;
 import com.google.wireless.gdata.contacts.client.ContactsClient;
 import com.google.wireless.gdata.contacts.data.ContactEntry;
 import com.google.wireless.gdata.contacts.data.ContactsElement;
@@ -339,22 +337,35 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                     }
                     syncResult.stats.numIoExceptions++;
                     return;
-                } catch (AuthenticationException e) {
-                    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.d(TAG, "error downloading " + photoUrl, e);
+                } catch (HttpException e) {
+                    switch (e.getStatusCode()) {
+                        case HttpException.SC_UNAUTHORIZED:
+                            if (Config.LOGD) {
+                                Log.d(TAG, "not authorized to download " + photoUrl, e);
+                            }
+                            syncResult.stats.numAuthExceptions++;
+                            return;
+                        case HttpException.SC_FORBIDDEN:
+                        case HttpException.SC_NOT_FOUND:
+                            final String exceptionMessage = e.getMessage();
+                            if (Config.LOGD) {
+                                Log.d(TAG, "unable to download photo " + photoUrl + ", "
+                                        + exceptionMessage + ", ignoring");
+                            }
+                            ContentValues values = new ContentValues();
+                            values.put(Photos.SYNC_ERROR, exceptionMessage);
+                            Uri photoUri = Uri.withAppendedPath(
+                                    ContentUris.withAppendedId(People.CONTENT_URI, photoId),
+                                    Photos.CONTENT_DIRECTORY);
+                            cr.update(photoUri, values, null /* where */, null /* where args */);
+                            break;
+                        default:
+                            if (Config.LOGD) {
+                                Log.d(TAG, "error downloading " + photoUrl, e);
+                            }
+                            syncResult.stats.numIoExceptions++;
+                            return;
                     }
-                    syncResult.stats.numAuthExceptions++;
-                    return;
-                } catch (ResourceNotFoundException e) {
-                    if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.v(TAG, "photo " + photoUrl + " doesn't exist, ignoring");
-                    }
-                    ContentValues values = new ContentValues();
-                    values.put(Photos.SYNC_ERROR, e.getMessage());
-                    Uri photoUri = Uri.withAppendedPath(
-                            ContentUris.withAppendedId(People.CONTENT_URI, photoId),
-                            Photos.CONTENT_DIRECTORY);
-                    cr.update(photoUri, values, null /* no where */, null /* no where args */);
                 }
             }
             final boolean hasMoreToSync = numFetched < cursor.getCount();
@@ -442,7 +453,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                 InputStream inputStream = null;
                 byte[] imageData = c.getBlob(dataColumn);
                 if (imageData != null) {
-                    inputStream = new ByteArrayInputStream(c.getBlob(dataColumn));
+                    inputStream = new ByteArrayInputStream(imageData);
                 }
                 Uri photoUri = Uri.withAppendedPath(People.CONTENT_URI,
                         c.getString(personColumn) + "/" + Photos.CONTENT_DIRECTORY);
@@ -471,42 +482,58 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                             null /* no where */, null /* no where args */) != 1) {
                         Log.e(TAG, "error updating photo " + photoUri + " with values " + values);
                         syncResult.stats.numParseExceptions++;
+                    } else {
+                        syncResult.stats.numUpdates++;
                     }
-                } catch (AuthenticationException e) {
-                    if (syncResult.stats.numAuthExceptions == 0) {
-                        if (Config.LOGD) {
-                           Log.d(TAG, "auth error during update of " + entry + ", skipping");
-                        }
-                    }
-                    syncResult.stats.numAuthExceptions++;
-                    try {
-                        GoogleLoginServiceBlockingHelper.invalidateAuthToken(getContext(), authToken);
-                    } catch (GoogleLoginServiceNotFoundException e1) {
-                        if (Config.LOGD) {
-                            Log.d(TAG, "could not invalidate auth token", e1);
-                        }
-                    }
-                    continue;
-                } catch (ConflictDetectedException e) {
-                    if (Config.LOGD) {
-                        Log.d(TAG, "conflict detected during update of " + entry + ", skipping");
-                    }
-                    syncResult.stats.numConflictDetectedExceptions++;
                     continue;
                 } catch (ParseException e) {
                     Log.e(TAG, "parse error during update of " + ", skipping");
                     syncResult.stats.numParseExceptions++;
-                    continue;
                 } catch (IOException e) {
                     if (Config.LOGD) {
                         Log.d(TAG, "io error during update of " + entry.toString()
                                 + ", skipping");
                     }
                     syncResult.stats.numIoExceptions++;
-                    continue;
-                }
+                } catch (HttpException e) {
+                    switch (e.getStatusCode()) {
+                        case HttpException.SC_UNAUTHORIZED:
+                            if (syncResult.stats.numAuthExceptions == 0) {
+                                if (Config.LOGD) {
+                                   Log.d(TAG, "auth error during update of " + entry
+                                           + ", skipping");
+                                }
+                            }
+                            syncResult.stats.numAuthExceptions++;
+                            try {
+                                GoogleLoginServiceBlockingHelper.invalidateAuthToken(getContext(),
+                                        authToken);
+                            } catch (GoogleLoginServiceNotFoundException e1) {
+                                if (Config.LOGD) {
+                                    Log.d(TAG, "could not invalidate auth token", e1);
+                                }
+                            }
+                            return;
 
-                syncResult.stats.numUpdates++;
+                        case HttpException.SC_CONFLICT:
+                            if (Config.LOGD) {
+                                Log.d(TAG, "conflict detected during update of " + entry
+                                        + ", skipping");
+                            }
+                            syncResult.stats.numConflictDetectedExceptions++;
+                            break;
+                        case HttpException.SC_BAD_REQUEST:
+                        case HttpException.SC_FORBIDDEN:
+                        case HttpException.SC_NOT_FOUND:
+                        case HttpException.SC_INTERNAL_SERVER_ERROR:
+                        default:
+                            if (Config.LOGD) {
+                                Log.d(TAG, "error " + e.getMessage() + " during update of "
+                                        + entry.toString() + ", skipping");
+                            }
+                            syncResult.stats.numIoExceptions++;
+                    }
+                }
             }
         } finally {
             c.close();
@@ -809,8 +836,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      * Takes the entry, casts it to a ContactEntry and executes the appropriate
      * actions on the ContentProvider to represent the entry.
      */
-    @Override
-    protected void updateProvider(Feed feed, long syncLocalId, boolean forceDelete,
+    protected void updateProvider(Feed feed, Long syncLocalId,
             Entry baseEntry, ContentProvider provider, Object syncInfo) throws ParseException {
 
         // This is a hack to delete these incorrectly created contacts named "Starred in Android"
@@ -820,33 +846,33 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
             GDataServiceClient client = getGDataServiceClient();
             try {
                 client.deleteEntry(baseEntry.getEditUri(), getAuthToken());
-            } catch (AuthenticationException e) {
-                Log.i(TAG, "  exception while deleting contact: " + baseEntry, e);
-            } catch (ConflictDetectedException e) {
-                Log.i(TAG, "  exception while deleting contact: " + baseEntry, e);
-            } catch (ParseException e) {
-                Log.i(TAG, "  exception while deleting contact: " + baseEntry, e);
             } catch (IOException e) {
+                Log.i(TAG, "  exception while deleting contact: " + baseEntry, e);
+            } catch (com.google.wireless.gdata.client.HttpException e) {
                 Log.i(TAG, "  exception while deleting contact: " + baseEntry, e);
             }
         }
 
-        updateProviderImpl(getAccount(), syncLocalId, forceDelete, baseEntry, provider);
+        updateProviderImpl(getAccount(), syncLocalId, baseEntry, provider);
     }
 
-    protected static void updateProviderImpl(String account, long syncLocalId,
-            boolean forceDelete, Entry entry, ContentProvider provider) throws ParseException {
+    protected static void updateProviderImpl(String account, Long syncLocalId,
+            Entry entry, ContentProvider provider) throws ParseException {
         // If this is a deleted entry then add it to the DELETED_CONTENT_URI
         ContentValues deletedValues = null;
-        if (forceDelete || entry.isDeleted()) {
+        if (entry.isDeleted()) {
             deletedValues = new ContentValues();
-            deletedValues.put(SyncConstValue._SYNC_ID, lastItemFromUri(entry.getId()));
+            deletedValues.put(SyncConstValue._SYNC_LOCAL_ID, syncLocalId);
+            final String id = entry.getId();
             final String editUri = entry.getEditUri();
+            if (!TextUtils.isEmpty(id)) {
+                deletedValues.put(SyncConstValue._SYNC_ID, lastItemFromUri(id));
+            }
             if (!TextUtils.isEmpty(editUri)) {
                 deletedValues.put(SyncConstValue._SYNC_VERSION, lastItemFromUri(editUri));
             }
             deletedValues.put(SyncConstValue._SYNC_ACCOUNT, account);
-       }
+        }
 
         if (entry instanceof ContactEntry) {
             if (deletedValues != null) {
@@ -867,7 +893,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         throw new IllegalArgumentException("unknown entry type, " + entry.getClass().getName());
     }
 
-    protected static void updateProviderWithContactEntry(String account, long syncLocalId,
+    protected static void updateProviderWithContactEntry(String account, Long syncLocalId,
             ContactEntry entry, ContentProvider provider) throws ParseException {
         final String name = entry.getTitle();
         final String notes = entry.getContent();
@@ -1021,7 +1047,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         }
     }
 
-    protected static void updateProviderWithGroupEntry(String account, long syncLocalId,
+    protected static void updateProviderWithGroupEntry(String account, Long syncLocalId,
             GroupEntry entry, ContentProvider provider) throws ParseException {
         ContentValues values = new ContentValues();
         values.put(Groups.NAME, entry.getTitle());

@@ -13,6 +13,11 @@
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />    
     <uses-permission android:name="android.permission.READ_SYNC_STATS" />
 
+    <instrumentation android:name="android.test.InstrumentationTestRunner"
+        android:targetPackage="com.android.providers.contacts"
+        android:label="ContactsProvider Isolated Tests">
+    </instrumentation>
+
     <instrumentation android:name="SyncContactsInstrumentation"
         android:targetPackage="com.android.providers.contacts"
         android:label="Contacts Sync Test">
