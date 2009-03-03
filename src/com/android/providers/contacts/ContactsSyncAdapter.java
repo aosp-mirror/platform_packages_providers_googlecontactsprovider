@@ -205,7 +205,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
     protected ContactsSyncAdapter(Context context, SyncableContentProvider provider) {
         super(context, provider);
         mContactsClient = new ContactsClient(
-                new AndroidGDataClient(context),
+                new AndroidGDataClient(context.getContentResolver()),
                 new XmlContactsGDataParserFactory(new AndroidXmlParserFactory()));
     }
 
