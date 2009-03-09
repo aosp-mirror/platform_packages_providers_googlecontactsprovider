@@ -1,8 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_MODULE_TAGS := user development
-
 contacts_provider_files := ../ContactsProvider/src/com/android/providers/contacts/ContactsProvider.java
 
 LOCAL_SRC_FILES := $(call all-java-files-under,src) $(contacts_provider_files)
