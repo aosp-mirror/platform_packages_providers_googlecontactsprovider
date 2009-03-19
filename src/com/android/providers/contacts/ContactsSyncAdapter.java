@@ -613,6 +613,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
             throws ParseException {
         entry.setTitle(c.getString(c.getColumnIndexOrThrow(People.NAME)));
         entry.setContent(c.getString(c.getColumnIndexOrThrow(People.NOTES)));
+        entry.setYomiName(c.getString(c.getColumnIndexOrThrow(People.PHONETIC_NAME)));
 
         long syncLocalId = c.getLong(c.getColumnIndexOrThrow(SyncConstValue._SYNC_LOCAL_ID));
         addContactMethodsToContactEntry(cr, syncLocalId, entry);
@@ -897,6 +898,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
             ContactEntry entry, ContentProvider provider) throws ParseException {
         final String name = entry.getTitle();
         final String notes = entry.getContent();
+        final String yomiName = entry.getYomiName();
         final String personSyncId = lastItemFromUri(entry.getId());
         final String personSyncVersion = lastItemFromUri(entry.getEditUri());
 
@@ -904,6 +906,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         ContentValues values = new ContentValues();
         values.put(People.NAME, name);
         values.put(People.NOTES, notes);
+        values.put(People.PHONETIC_NAME, yomiName);
         values.put(SyncConstValue._SYNC_ACCOUNT, account);
         values.put(SyncConstValue._SYNC_ID, personSyncId);
         values.put(SyncConstValue._SYNC_DIRTY, "0");
