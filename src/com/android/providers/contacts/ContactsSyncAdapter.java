@@ -90,9 +90,12 @@ import java.util.Set;
  * Implements a SyncAdapter for Contacts
  */
 public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
-    private static String CONTACTS_FEED_URL = "http://www.google.com/m8/feeds/contacts/";
-    private static String GROUPS_FEED_URL = "http://www.google.com/m8/feeds/groups/";
-    private static String PHOTO_FEED_URL = "http://www.google.com/m8/feeds/photos/media/";
+
+    private static final String USER_AGENT_APP_VERSION = "Android-GData-Contacts/1.1"; 
+
+    private static final String CONTACTS_FEED_URL = "http://www.google.com/m8/feeds/contacts/";
+    private static final String GROUPS_FEED_URL = "http://www.google.com/m8/feeds/groups/";
+    private static final String PHOTO_FEED_URL = "http://www.google.com/m8/feeds/photos/media/";
 
     private final ContactsClient mContactsClient;
 
@@ -205,7 +208,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
     protected ContactsSyncAdapter(Context context, SyncableContentProvider provider) {
         super(context, provider);
         mContactsClient = new ContactsClient(
-                new AndroidGDataClient(context),
+                new AndroidGDataClient(context, USER_AGENT_APP_VERSION),
                 new XmlContactsGDataParserFactory(new AndroidXmlParserFactory()));
     }
 
