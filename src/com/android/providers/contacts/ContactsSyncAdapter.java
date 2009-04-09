@@ -19,8 +19,6 @@ package com.android.providers.contacts;
 import com.google.android.collect.Sets;
 import com.google.android.gdata.client.AndroidGDataClient;
 import com.google.android.gdata.client.AndroidXmlParserFactory;
-import com.google.android.googlelogin.GoogleLoginServiceBlockingHelper;
-import com.google.android.googlelogin.GoogleLoginServiceNotFoundException;
 import com.google.android.providers.AbstractGDataSyncAdapter;
 import com.google.wireless.gdata.client.GDataServiceClient;
 import com.google.wireless.gdata.client.QueryParams;
@@ -72,6 +70,7 @@ import android.provider.SyncConstValue;
 import android.text.TextUtils;
 import android.util.Config;
 import android.util.Log;
+import android.accounts.AccountManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -508,14 +507,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                                 }
                             }
                             syncResult.stats.numAuthExceptions++;
-                            try {
-                                GoogleLoginServiceBlockingHelper.invalidateAuthToken(getContext(),
-                                        authToken);
-                            } catch (GoogleLoginServiceNotFoundException e1) {
-                                if (Config.LOGD) {
-                                    Log.d(TAG, "could not invalidate auth token", e1);
-                                }
-                            }
+                            AccountManager.get(getContext()).blockingInvalidateAuthToken(
+                                    "com.google.GAIA", authToken);
                             return;
 
                         case HttpException.SC_CONFLICT:

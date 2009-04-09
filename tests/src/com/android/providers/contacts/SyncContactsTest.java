@@ -1,20 +1,18 @@
 package com.android.providers.contacts;
 
-import com.google.android.collect.Maps;
-import com.google.android.googlelogin.GoogleLoginServiceBlockingHelper;
-import com.google.android.googlelogin.GoogleLoginServiceNotFoundException;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.Contacts;
 import android.test.RenamingDelegatingContext;
 import android.test.SyncBaseInstrumentation;
-import android.util.Log;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.android.collect.Maps;
+import com.google.android.googlelogin.GoogleLoginServiceHelper;
 
 public class SyncContactsTest extends SyncBaseInstrumentation {
     private Context mTargetContext;
@@ -64,12 +62,7 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
     }
 
     private String getAccount() {
-        try {
-            return GoogleLoginServiceBlockingHelper.getAccount(mTargetContext, false);
-        } catch (GoogleLoginServiceNotFoundException e) {
-            Log.e(this.getClass().getName(), "Could not find Google login service");
-            return null;
-        }
+        return GoogleLoginServiceHelper.blockingGetAccount(mTargetContext, false);
     }
 
     /**
