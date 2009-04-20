@@ -6,13 +6,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.provider.Contacts;
 import android.test.RenamingDelegatingContext;
 import android.test.SyncBaseInstrumentation;
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.OperationCanceledException;
+import android.accounts.AuthenticatorException;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.io.IOException;
 
 import com.google.android.collect.Maps;
-import com.google.android.googlelogin.GoogleLoginServiceHelper;
+import com.google.android.googlelogin.GoogleLoginServiceConstants;
 
 public class SyncContactsTest extends SyncBaseInstrumentation {
     private Context mTargetContext;
@@ -62,7 +67,22 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
     }
 
     private String getAccount() {
-        return GoogleLoginServiceHelper.blockingGetAccount(mTargetContext, false);
+        try {
+            Account[] accounts = AccountManager.get(mTargetContext)
+                    .blockingGetAccountsWithTypeAndFeatures(
+                            GoogleLoginServiceConstants.ACCOUNT_TYPE,
+                            new String[]{GoogleLoginServiceConstants.FEATURE_GOOGLE_OR_DASHER});
+            if (accounts.length > 0) {
+                return accounts[0].mName;
+            }
+        } catch (OperationCanceledException e) {
+            // handle below
+        } catch (IOException e) {
+            // handle below
+        } catch (AuthenticatorException e) {
+            // handle below
+        }
+        return null;
     }
 
     /**
