@@ -34,6 +34,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.SystemClock;
 import android.provider.Contacts;
 import android.text.TextUtils;
+import android.accounts.Account;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -64,12 +65,14 @@ public class GoogleContactsProvider extends ContactsProvider {
             + "         OUTER JOIN groups AS g "
             + "         ON (gm.group_id=g._id "
             + "           OR (gm.group_sync_id=g._sync_id "
-            + "               AND gm.group_sync_account=g._sync_account))) "
+            + "               AND gm.group_sync_account=g._sync_account "
+            + "               AND gm.group_sync_account_type=g._sync_account_type))) "
             + "       GROUP BY person) "
             + "   WHERE max_should_sync=0)"
             + "  OR _id NOT IN (SELECT person FROM groupmembership))"
             + " AND _sync_dirty=0 "
-            + " AND _sync_account=?";
+            + " AND _sync_account=? "
+            + " AND _sync_account_type=?";
 
     private SyncAdapter mSyncAdapter = null;
     private AlarmManager mAlarmService = null;
@@ -80,7 +83,7 @@ public class GoogleContactsProvider extends ContactsProvider {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (ACTION_PURGE_CONTACTS.equals(intent.getAction())) {
-                    purgeContacts(intent.getStringExtra("account"));
+                    purgeContacts((Account) intent.getParcelableExtra("account"));
                 }
             }
         };
@@ -99,7 +102,7 @@ public class GoogleContactsProvider extends ContactsProvider {
     }
 
     @Override
-    protected void onLocalChangesForAccount(final ContentResolver resolver, String account,
+    protected void onLocalChangesForAccount(final ContentResolver resolver, Account account,
             boolean groupsModified) {
         ContactsSyncAdapter.updateSubscribedFeeds(resolver, account);
         if (groupsModified) {
@@ -111,7 +114,7 @@ public class GoogleContactsProvider extends ContactsProvider {
      * Delete any non-sync_dirty contacts associated with the given account
      * that are not in any of the synced groups.
      */
-    private void schedulePurge(String account) {
+    private void schedulePurge(Account account) {
         if (isTemporary()) {
             throw new IllegalStateException("this must not be called on temp providers");
         }
@@ -137,18 +140,19 @@ public class GoogleContactsProvider extends ContactsProvider {
         purgeContacts(getSyncingAccount());
     }
 
-    private void purgeContacts(String account) {
+    private void purgeContacts(Account account) {
         if (isTemporary()) {
             throw new IllegalStateException("this must not be called on temp providers");
         }
         SQLiteDatabase db = getDatabase();
         db.beginTransaction();
         try {
+            // TODO(fredq) should be using account instead of null
             final String value = Contacts.Settings.getSetting(getContext().getContentResolver(),
-                    account, Contacts.Settings.SYNC_EVERYTHING);
+                    null, Contacts.Settings.SYNC_EVERYTHING);
             final boolean shouldSyncEverything = !TextUtils.isEmpty(value) && !"0".equals(value);
             if (!shouldSyncEverything) {
-                db.execSQL(PURGE_UNSYNCED_CONTACTS_SQL, new String[]{account});
+                db.execSQL(PURGE_UNSYNCED_CONTACTS_SQL, new String[]{account.mName, account.mType});
             }
 
             // remove any feeds in the SyncData that aren't in the current sync set.
@@ -179,12 +183,13 @@ public class GoogleContactsProvider extends ContactsProvider {
         }
     }
 
-    private AbstractGDataSyncAdapter.GDataSyncData readSyncData(String account) {
+    private AbstractGDataSyncAdapter.GDataSyncData readSyncData(Account account) {
         if (!getDatabase().inTransaction()) {
             throw new IllegalStateException("you can only call this from within a transaction");
         }
-        Cursor c = getDatabase().query("_sync_state", new String[]{"data"}, "_sync_account=?",
-                new String[]{account}, null, null, null);
+        Cursor c = getDatabase().query("_sync_state", new String[]{"data"},
+                "_sync_account=? AND _sync_account_type=?",
+                new String[]{account.mName, account.mType}, null, null, null);
         try {
             byte[] data = null;
             if (c.moveToNext()) data = c.getBlob(0);
@@ -194,15 +199,17 @@ public class GoogleContactsProvider extends ContactsProvider {
         }
     }
 
-    private void writeSyncData(String account, AbstractGDataSyncAdapter.GDataSyncData syncData) {
+    private void writeSyncData(Account account, AbstractGDataSyncAdapter.GDataSyncData syncData) {
         final SQLiteDatabase db = getDatabase();
         if (!db.inTransaction()) {
             throw new IllegalStateException("you can only call this from within a transaction");
         }
-        db.delete("_sync_state", "_sync_account=?", new String[]{account});
+        db.delete("_sync_state", "_sync_account=? AND _sync_account_type=?",
+                new String[]{account.mName, account.mType});
         ContentValues values = new ContentValues();
         values.put("data", ContactsSyncAdapter.newBytesFromGDataSyncData(syncData));
-        values.put("_sync_account", account);
+        values.put("_sync_account", account.mName);
+        values.put("_sync_account_type", account.mType);
         db.insert("_sync_state", "_sync_account", values);
     }
 }
