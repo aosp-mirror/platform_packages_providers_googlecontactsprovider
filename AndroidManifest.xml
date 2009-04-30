@@ -19,5 +19,12 @@
                 android:syncable="true" android:multiprocess="false"
                 android:readPermission="android.permission.READ_CONTACTS"
                 android:writePermission="android.permission.WRITE_CONTACTS" />
+        <service android:name="ContactsSyncAdapterService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter"
+                       android:resource="@xml/syncadapter" />
+        </service>
     </application>
 </manifest>

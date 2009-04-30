@@ -27,7 +27,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SyncAdapter;
 import android.content.SyncContext;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -74,11 +73,11 @@ public class GoogleContactsProvider extends ContactsProvider {
             + " AND _sync_account=? "
             + " AND _sync_account_type=?";
 
-    private SyncAdapter mSyncAdapter = null;
     private AlarmManager mAlarmService = null;
 
     @Override
     public boolean onCreate() {
+        setTempProviderSyncAdapter(new ContactsSyncAdapter(getContext(), this));
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -89,16 +88,6 @@ public class GoogleContactsProvider extends ContactsProvider {
         };
         getContext().registerReceiver(receiver, new IntentFilter(ACTION_PURGE_CONTACTS));
         return super.onCreate();
-    }
-
-    @Override
-    public synchronized SyncAdapter getSyncAdapter() {
-        if (mSyncAdapter != null) {
-            return mSyncAdapter;
-        }
-        
-        mSyncAdapter = new ContactsSyncAdapter(getContext(), this);
-        return mSyncAdapter;
     }
 
     @Override

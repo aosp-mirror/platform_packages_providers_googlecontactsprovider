@@ -18,6 +18,7 @@ import android.content.ContentValues;
 import android.content.SyncContext;
 import android.content.SyncResult;
 import android.content.TempProviderSyncResult;
+import android.content.SyncableContentProvider;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
@@ -812,7 +813,7 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
     protected void setUp() throws Exception {
         super.setUp();
 
-        mSyncAdapter = (ContactsSyncAdapter)getProvider().getSyncAdapter();
+        mSyncAdapter = (ContactsSyncAdapter)getProvider().getTempProviderSyncAdapter();
         getProvider().onSyncStart(mMockSyncContext, ACCOUNT);
     }
 
