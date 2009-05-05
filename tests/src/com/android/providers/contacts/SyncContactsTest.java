@@ -30,7 +30,6 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
 
     private static final Set<String> PEOPLE_PHONES_JOIN_COLUMNS_TO_SKIP = new HashSet<String>();
 
-    android.provider.Sync.Settings.QueryMap mSyncSettings;
     static {
         PEOPLE_PHONES_JOIN_COLUMNS_TO_SKIP.add(Contacts.People._ID);
         PEOPLE_PHONES_JOIN_COLUMNS_TO_SKIP.add(Contacts.People.PRIMARY_PHONE_ID);
