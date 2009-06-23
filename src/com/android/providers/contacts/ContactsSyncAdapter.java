@@ -126,7 +126,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
     private boolean mPerformedGetServerDiffs;
 
     // Only valid during a sync. If set then this sync was a forced sync request
-    private boolean mSyncForced;
+    private boolean mIsManualSync;
 
     private int mPhotoDownloads;
     private int mPhotoUploads;
@@ -1214,13 +1214,13 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
     }
 
     @Override
-    public void onSyncStarting(SyncContext context, Account account, boolean forced,
+    public void onSyncStarting(SyncContext context, Account account, boolean manualSync,
             SyncResult result) {
         mPerformedGetServerDiffs = false;
-        mSyncForced = forced;
+        mIsManualSync = manualSync;
         mPhotoDownloads = 0;
         mPhotoUploads = 0;
-        super.onSyncStarting(context, account, forced, result);
+        super.onSyncStarting(context, account, manualSync, result);
     }
 
     @Override
@@ -1238,10 +1238,9 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
             try {
                 if (cursor.getCount() != 0) {
                     Bundle extras = new Bundle();
-                    extras.putParcelable(ContentResolver.SYNC_EXTRAS_ACCOUNT, account);
-                    extras.putBoolean(ContentResolver.SYNC_EXTRAS_FORCE, mSyncForced);
+                    extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, mIsManualSync);
                     extras.putString("feed", ContactsSyncAdapter.getPhotosFeedForAccount(account));
-                    getContext().getContentResolver().startSync(Contacts.CONTENT_URI, extras);
+                    ContentResolver.requestSync(account, Contacts.AUTHORITY, extras);
                 }
             } finally {
                 cursor.close();
@@ -1287,9 +1286,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
 
             // request a sync of this feed
             Bundle extras = new Bundle();
-            extras.putParcelable(ContentResolver.SYNC_EXTRAS_ACCOUNT, account);
             extras.putString("feed", feed);
-            cr.startSync(Contacts.CONTENT_URI, extras);
+            ContentResolver.requestSync(account, Contacts.AUTHORITY, extras);
         }
     }
 }
