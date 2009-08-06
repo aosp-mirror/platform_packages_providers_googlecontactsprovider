@@ -659,7 +659,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         }
     }
 
-    private static void addPhonesToContactEntry(ContentResolver cr, long personId, ContactEntry entry)
+    private static void addPhonesToContactEntry(ContentResolver cr, long personId,
+                                                ContactEntry entry)
             throws ParseException {
         Cursor c = cr.query(Phones.CONTENT_URI, null, "person=" + personId, null, null);
         int numberIndex = c.getColumnIndexOrThrow(People.Phones.NUMBER);
@@ -838,7 +839,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      * actions on the ContentProvider to represent the entry.
      */
     protected void updateProvider(Feed feed, Long syncLocalId,
-            Entry baseEntry, ContentProvider provider, Object syncInfo) throws ParseException {
+            Entry baseEntry, ContentProvider provider, Object syncInfo,
+            GDataSyncData.FeedData feedSyncData) throws ParseException {
 
         // This is a hack to delete these incorrectly created contacts named "Starred in Android"
         if (baseEntry instanceof ContactEntry
@@ -1200,7 +1202,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
     }
 
     @Override
-    protected void updateQueryParameters(QueryParams params) {
+    protected void updateQueryParameters(QueryParams params, GDataSyncData.FeedData feedSyncData) {
         // we want to get the events ordered by last modified, so we can
         // recover in case we cannot process the entire feed.
         params.setParamValue("orderby", "lastmodified");
