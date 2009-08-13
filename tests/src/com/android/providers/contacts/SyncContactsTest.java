@@ -70,7 +70,7 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
             Account[] accounts = AccountManager.get(mTargetContext)
                     .blockingGetAccountsWithTypeAndFeatures(
                             GoogleLoginServiceConstants.ACCOUNT_TYPE,
-                            new String[]{GoogleLoginServiceConstants.FEATURE_GOOGLE_OR_DASHER});
+                            new String[]{GoogleLoginServiceConstants.FEATURE_HOSTED_OR_GOOGLE});
             if (accounts.length > 0) {
                 return accounts[0].mName;
             }
