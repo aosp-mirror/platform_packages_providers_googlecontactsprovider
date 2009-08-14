@@ -291,7 +291,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
 
         Cursor cursor = cr.query(Contacts.Groups.CONTENT_URI, new String[]{Groups._SYNC_ID},
                 "_sync_account=? AND _sync_account_type=? AND should_sync>0",
-                new String[]{account.mName, account.mType}, null);
+                new String[]{account.name, account.type}, null);
         try {
             while (cursor.moveToNext()) {
                 feedsToSync.add(getContactsFeedForGroup(account, cursor.getString(0)));
@@ -316,7 +316,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                 new String[]{Photos._SYNC_ID, Photos._SYNC_VERSION, Photos.PERSON_ID,
                         Photos.DOWNLOAD_REQUIRED, Photos._ID}, ""
                 + "_sync_account=? AND _sync_account_type=? AND download_required != 0",
-                new String[]{account.mName, account.mType}, null);
+                new String[]{account.name, account.type}, null);
         try {
             int numFetched = 0;
             while (cursor.moveToNext()) {
@@ -511,7 +511,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                                 }
                             }
                             syncResult.stats.numAuthExceptions++;
-                            AccountManager.get(getContext()).blockingInvalidateAuthToken(
+                            AccountManager.get(getContext()).invalidateAuthToken(
                                     "com.google.GAIA", authToken);
                             return;
 
@@ -874,8 +874,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
             if (!TextUtils.isEmpty(editUri)) {
                 deletedValues.put(SyncConstValue._SYNC_VERSION, lastItemFromUri(editUri));
             }
-            deletedValues.put(SyncConstValue._SYNC_ACCOUNT, account.mName);
-            deletedValues.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.mType);
+            deletedValues.put(SyncConstValue._SYNC_ACCOUNT, account.name);
+            deletedValues.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.type);
         }
 
         if (entry instanceof ContactEntry) {
@@ -910,8 +910,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         values.put(People.NAME, name);
         values.put(People.NOTES, notes);
         values.put(People.PHONETIC_NAME, yomiName);
-        values.put(SyncConstValue._SYNC_ACCOUNT, account.mName);
-        values.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.mType);
+        values.put(SyncConstValue._SYNC_ACCOUNT, account.name);
+        values.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.type);
         values.put(SyncConstValue._SYNC_ID, personSyncId);
         values.put(SyncConstValue._SYNC_DIRTY, "0");
         values.put(SyncConstValue._SYNC_LOCAL_ID, syncLocalId);
@@ -925,8 +925,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         values.clear();
         values.put(Photos.PERSON_ID, ContentUris.parseId(personUri));
         values.put(Photos.EXISTS_ON_SERVER, photoExistsOnServer ? 1 : 0);
-        values.put(SyncConstValue._SYNC_ACCOUNT, account.mName);
-        values.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.mType);
+        values.put(SyncConstValue._SYNC_ACCOUNT, account.name);
+        values.put(SyncConstValue._SYNC_ACCOUNT_TYPE, account.type);
         values.put(SyncConstValue._SYNC_ID, personSyncId);
         values.put(SyncConstValue._SYNC_DIRTY, 0);
         values.put(SyncConstValue._SYNC_LOCAL_ID, syncLocalId);
@@ -1003,8 +1003,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                 continue;
             }
             values.clear();
-            values.put(GroupMembership.GROUP_SYNC_ACCOUNT, account.mName);
-            values.put(GroupMembership.GROUP_SYNC_ACCOUNT_TYPE, account.mType);
+            values.put(GroupMembership.GROUP_SYNC_ACCOUNT, account.name);
+            values.put(GroupMembership.GROUP_SYNC_ACCOUNT_TYPE, account.type);
             values.put(GroupMembership.GROUP_SYNC_ID,
                     lastItemFromUri(groupMembershipInfo.getGroup()));
             Uri uri = Uri.withAppendedPath(personUri, GroupMembership.CONTENT_DIRECTORY);
@@ -1062,8 +1062,8 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
         values.put(Groups.NAME, entry.getTitle());
         values.put(Groups.NOTES, entry.getContent());
         values.put(Groups.SYSTEM_ID, entry.getSystemGroup());
-        values.put(Groups._SYNC_ACCOUNT, account.mName);
-        values.put(Groups._SYNC_ACCOUNT_TYPE, account.mType);
+        values.put(Groups._SYNC_ACCOUNT, account.name);
+        values.put(Groups._SYNC_ACCOUNT_TYPE, account.type);
         values.put(Groups._SYNC_ID, lastItemFromUri(entry.getId()));
         values.put(Groups._SYNC_DIRTY, 0);
         values.put(Groups._SYNC_LOCAL_ID, syncLocalId);
@@ -1144,7 +1144,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      *  @return The contacts feed url for a specific account.
      */
     public static String getContactsFeedForAccount(Account account) {
-        String url = CONTACTS_FEED_URL + account.mName + "/base2_property-android";
+        String url = CONTACTS_FEED_URL + account.name + "/base2_property-android";
         return rewriteUrlforAccount(account, url);
     }
 
@@ -1170,7 +1170,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      *  @return The groups feed url for a specific account.
      */
     public static String getGroupsFeedForAccount(Account account) {
-        String url = GROUPS_FEED_URL + account.mName + "/base2_property-android";
+        String url = GROUPS_FEED_URL + account.name + "/base2_property-android";
         return rewriteUrlforAccount(account, url);
     }
 
@@ -1184,7 +1184,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      *  @return The groups feed url for a specific account.
      */
     public static String getCanonicalGroupsFeedForAccount(Account account) {
-        return GROUPS_FEED_URL + account.mName + "/base";
+        return GROUPS_FEED_URL + account.name + "/base";
     }
 
     /**
@@ -1193,7 +1193,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
      *  @return The photo feed url for a specific account.
      */
     public static String getPhotosFeedForAccount(Account account) {
-        String url = PHOTO_FEED_URL + account.mName;
+        String url = PHOTO_FEED_URL + account.name;
         return rewriteUrlforAccount(account, url);
     }
 
@@ -1236,7 +1236,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                     new String[]{Photos._SYNC_ID, Photos._SYNC_VERSION, Photos.PERSON_ID,
                             Photos.DOWNLOAD_REQUIRED}, ""
                     + "_sync_account=? AND _sync_account_type=? AND download_required != 0",
-                    new String[]{account.mName, account.mType}, null);
+                    new String[]{account.name, account.type}, null);
             try {
                 if (cursor.getCount() != 0) {
                     Bundle extras = new Bundle();
@@ -1261,7 +1261,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                 SubscribedFeeds.Feeds.AUTHORITY + "=?"
                         + " AND " + SubscribedFeeds.Feeds._SYNC_ACCOUNT + "=?"
                         + " AND " + SubscribedFeeds.Feeds._SYNC_ACCOUNT_TYPE + "=?",
-                new String[]{Contacts.AUTHORITY, account.mName, account.mType}, null);
+                new String[]{Contacts.AUTHORITY, account.name, account.type}, null);
         try {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "scanning over subscriptions with authority "

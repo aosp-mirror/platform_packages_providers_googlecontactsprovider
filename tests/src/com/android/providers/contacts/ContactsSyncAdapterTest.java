@@ -18,7 +18,6 @@ import android.content.ContentValues;
 import android.content.SyncContext;
 import android.content.SyncResult;
 import android.content.TempProviderSyncResult;
-import android.content.SyncableContentProvider;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.net.Uri;
@@ -426,8 +425,8 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
             String name, String syncId) {
         ContentValues values = new ContentValues();
         values.put(People.NAME, name);
-        values.put(People._SYNC_ACCOUNT, account.mName);
-        values.put(People._SYNC_ACCOUNT_TYPE, account.mType);
+        values.put(People._SYNC_ACCOUNT, account.name);
+        values.put(People._SYNC_ACCOUNT_TYPE, account.type);
         values.put(People._SYNC_ID, syncId);
         return provider.insert(People.CONTENT_URI, values);
     }
@@ -455,9 +454,9 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
         assertEquals(dumpRow(cursor), entry.getEditUri(),
                 entry.getId() + "/" + getString(cursor, SyncConstValue._SYNC_VERSION));
-        assertEquals(dumpRow(cursor), ACCOUNT.mName,
+        assertEquals(dumpRow(cursor), ACCOUNT.name,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT));
-        assertEquals(dumpRow(cursor), ACCOUNT.mType,
+        assertEquals(dumpRow(cursor), ACCOUNT.type,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT_TYPE));
         assertEquals(dumpRow(cursor), entry.getTitle(), getString(cursor, Groups.NAME));
         assertEquals(dumpRow(cursor), entry.getSystemGroup(), getString(cursor, Groups.SYSTEM_ID));
@@ -537,9 +536,9 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
         assertEquals(dumpRow(cursor), entry.getEditUri(),
                 entry.getId() + "/" + getString(cursor, SyncConstValue._SYNC_VERSION));
-        assertEquals(dumpRow(cursor), ACCOUNT.mName,
+        assertEquals(dumpRow(cursor), ACCOUNT.name,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT));
-        assertEquals(dumpRow(cursor), ACCOUNT.mType,
+        assertEquals(dumpRow(cursor), ACCOUNT.type,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT_TYPE));
         assertEquals(dumpRow(cursor), entry.getTitle(), getString(cursor, People.NAME));
         assertEquals(dumpRow(cursor), entry.getContent(), getString(cursor, People.NOTES));
@@ -571,9 +570,9 @@ public class ContactsSyncAdapterTest extends ProviderTestCase<ContactsProvider> 
                 feedFromEntry(entry) + "/" + getString(cursor, SyncConstValue._SYNC_ID));
         assertEquals(dumpRow(cursor), entry.getEditUri(),
                 entry.getId() + "/" + getString(cursor, SyncConstValue._SYNC_VERSION));
-        assertEquals(dumpRow(cursor), ACCOUNT.mName,
+        assertEquals(dumpRow(cursor), ACCOUNT.name,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT));
-        assertEquals(dumpRow(cursor), ACCOUNT.mType,
+        assertEquals(dumpRow(cursor), ACCOUNT.type,
                 getString(cursor, SyncConstValue._SYNC_ACCOUNT_TYPE));
         if (syncLocalId != null) {
             assertEquals(dumpRow(cursor),

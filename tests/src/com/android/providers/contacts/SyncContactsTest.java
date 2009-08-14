@@ -67,12 +67,11 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
 
     private String getAccount() {
         try {
-            Account[] accounts = AccountManager.get(mTargetContext)
-                    .blockingGetAccountsWithTypeAndFeatures(
-                            GoogleLoginServiceConstants.ACCOUNT_TYPE,
-                            new String[]{GoogleLoginServiceConstants.FEATURE_HOSTED_OR_GOOGLE});
+            String[] features = new String[]{GoogleLoginServiceConstants.FEATURE_HOSTED_OR_GOOGLE};
+            Account[] accounts = AccountManager.get(mTargetContext).getAccountsByTypeAndFeatures(
+                    GoogleLoginServiceConstants.ACCOUNT_TYPE, features, null, null).getResult();
             if (accounts.length > 0) {
-                return accounts[0].mName;
+                return accounts[0].name;
             }
         } catch (OperationCanceledException e) {
             // handle below
