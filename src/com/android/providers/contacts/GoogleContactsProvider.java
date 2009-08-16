@@ -141,7 +141,7 @@ public class GoogleContactsProvider extends ContactsProvider {
                     null, Contacts.Settings.SYNC_EVERYTHING);
             final boolean shouldSyncEverything = !TextUtils.isEmpty(value) && !"0".equals(value);
             if (!shouldSyncEverything) {
-                db.execSQL(PURGE_UNSYNCED_CONTACTS_SQL, new String[]{account.mName, account.mType});
+                db.execSQL(PURGE_UNSYNCED_CONTACTS_SQL, new String[]{account.name, account.type});
             }
 
             // remove any feeds in the SyncData that aren't in the current sync set.
@@ -178,7 +178,7 @@ public class GoogleContactsProvider extends ContactsProvider {
         }
         Cursor c = getDatabase().query("_sync_state", new String[]{"data"},
                 "_sync_account=? AND _sync_account_type=?",
-                new String[]{account.mName, account.mType}, null, null, null);
+                new String[]{account.name, account.type}, null, null, null);
         try {
             byte[] data = null;
             if (c.moveToNext()) data = c.getBlob(0);
@@ -194,11 +194,11 @@ public class GoogleContactsProvider extends ContactsProvider {
             throw new IllegalStateException("you can only call this from within a transaction");
         }
         db.delete("_sync_state", "_sync_account=? AND _sync_account_type=?",
-                new String[]{account.mName, account.mType});
+                new String[]{account.name, account.type});
         ContentValues values = new ContentValues();
         values.put("data", ContactsSyncAdapter.newBytesFromGDataSyncData(syncData));
-        values.put("_sync_account", account.mName);
-        values.put("_sync_account_type", account.mType);
+        values.put("_sync_account", account.name);
+        values.put("_sync_account_type", account.type);
         db.insert("_sync_state", "_sync_account", values);
     }
 }
