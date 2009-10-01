@@ -512,7 +512,7 @@ public class ContactsSyncAdapter extends AbstractGDataSyncAdapter {
                             }
                             syncResult.stats.numAuthExceptions++;
                             AccountManager.get(getContext()).invalidateAuthToken(
-                                    "com.google.GAIA", authToken);
+                                    "com.google", authToken);
                             return;
 
                         case HttpException.SC_CONFLICT:
