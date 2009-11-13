@@ -1,20 +1,23 @@
 package com.android.providers.contacts;
 
-import com.google.android.collect.Maps;
-import com.google.android.googlelogin.GoogleLoginServiceBlockingHelper;
-import com.google.android.googlelogin.GoogleLoginServiceNotFoundException;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.provider.Contacts;
 import android.test.RenamingDelegatingContext;
 import android.test.SyncBaseInstrumentation;
-import android.util.Log;
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.OperationCanceledException;
+import android.accounts.AuthenticatorException;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.io.IOException;
+
+import com.google.android.collect.Maps;
+import com.google.android.googlelogin.GoogleLoginServiceConstants;
 
 public class SyncContactsTest extends SyncBaseInstrumentation {
     private Context mTargetContext;
@@ -64,11 +67,20 @@ public class SyncContactsTest extends SyncBaseInstrumentation {
 
     private String getAccount() {
         try {
-            return GoogleLoginServiceBlockingHelper.getAccount(mTargetContext, false);
-        } catch (GoogleLoginServiceNotFoundException e) {
-            Log.e(this.getClass().getName(), "Could not find Google login service");
-            return null;
+            String[] features = new String[]{GoogleLoginServiceConstants.FEATURE_HOSTED_OR_GOOGLE};
+            Account[] accounts = AccountManager.get(mTargetContext).getAccountsByTypeAndFeatures(
+                    GoogleLoginServiceConstants.ACCOUNT_TYPE, features, null, null).getResult();
+            if (accounts.length > 0) {
+                return accounts[0].name;
+            }
+        } catch (OperationCanceledException e) {
+            // handle below
+        } catch (IOException e) {
+            // handle below
+        } catch (AuthenticatorException e) {
+            // handle below
         }
+        return null;
     }
 
     /**
